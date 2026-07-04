@@ -1,0 +1,119 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  color: #1c1c1c;
+}
+
+/* Anchor to the viewport directly — robust regardless of html/body height */
+.app { position: fixed; inset: 0; overflow: hidden; }
+.map { position: absolute; inset: 0; }
+
+.card {
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.13);
+}
+
+/* Intro */
+.intro-wrap {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  padding: 16px;
+}
+.intro-card {
+  pointer-events: auto;
+  padding: 36px 40px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+}
+.intro-card h1 { font-size: 30px; margin-bottom: 10px; letter-spacing: -0.5px; }
+.tagline { color: #555; font-size: 15px; line-height: 1.45; margin-bottom: 22px; }
+.hint { color: #999; font-size: 12px; margin-top: 14px; }
+
+/* Search */
+.searchbox { position: relative; }
+.searchbox input {
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.searchbox input:focus { border-color: #eb0000; }
+.search-results {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: #fff; border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);
+  overflow: hidden; z-index: 10;
+  text-align: left;
+}
+.search-result {
+  padding: 11px 16px; cursor: pointer; font-size: 15px;
+}
+.search-result:hover { background: #f5f2ef; }
+.search-result .kt { color: #999; font-size: 12px; margin-left: 5px; }
+
+/* Header (after selection) */
+.header-card {
+  position: absolute; top: 14px; left: 14px;
+  padding: 14px 18px;
+  min-width: 230px;
+  z-index: 5;
+}
+.header-title { font-weight: 700; font-size: 16px; }
+.header-from { font-size: 14px; color: #444; margin-top: 5px; }
+.change-btn {
+  margin-left: 8px;
+  background: none; border: 1px solid #ccc; border-radius: 6px;
+  padding: 2px 8px; font-size: 11px; color: #666; cursor: pointer;
+}
+.change-btn:hover { border-color: #eb0000; color: #eb0000; }
+.header-stats {
+  display: flex; gap: 14px; margin-top: 8px;
+  font-size: 13px; font-weight: 600;
+}
+
+/* Legend */
+.legend {
+  position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 18px;
+  z-index: 5;
+}
+.legend-label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.legend-bar {
+  width: 130px; height: 10px; border-radius: 5px;
+  background: linear-gradient(to right, #1a6ee0, #d8d5d0 42%, #d8d5d0 58%, #eb0000);
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute; z-index: 20; pointer-events: none;
+  background: rgba(20, 20, 20, 0.92); color: #fff;
+  padding: 9px 12px; border-radius: 9px;
+  font-size: 12.5px; line-height: 1.5;
+  max-width: 240px;
+}
+.tooltip-name { font-weight: 700; }
+.tooltip-verdict { margin-top: 1px; }
+.tooltip-times { color: rgba(255, 255, 255, 0.65); font-size: 11.5px; }
+
+/* Footer */
+.footer {
+  position: absolute; bottom: 4px; left: 8px; z-index: 4;
+  font-size: 10px; color: #999;
+}
+.footer a { color: #999; }
+
+@media (max-width: 560px) {
+  .intro-card { padding: 26px 22px; }
+  .intro-card h1 { font-size: 24px; }
+  .header-card { right: 14px; min-width: 0; }
+  .legend { bottom: 40px; padding: 8px 12px; }
+  .legend-bar { width: 80px; }
+}
