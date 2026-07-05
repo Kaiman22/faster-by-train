@@ -88,12 +88,19 @@ def main():
     for mid, m in munis.items():
         if not m["car"] and not m["pt"]:
             continue
+        # Medoid, not mean: the settlement closest to the mean. A plain mean of
+        # settlement coords can land in a lake or forest (e.g. Küssnacht), which
+        # breaks street-network snapping in the routing engines.
+        mlat = sum(m["lats"]) / len(m["lats"])
+        mlon = sum(m["lons"]) / len(m["lons"])
+        best = min(range(len(m["lats"])),
+                   key=lambda i: hav(m["lats"][i], m["lons"][i], mlat, mlon))
         out_munis.append({
             "id": mid,
             "n": m["n"],
             "kt": m["kt"],
-            "lat": round(sum(m["lats"]) / len(m["lats"]), 5),
-            "lon": round(sum(m["lons"]) / len(m["lons"]), 5),
+            "lat": round(m["lats"][best], 5),
+            "lon": round(m["lons"][best], 5),
             "car": m["car"],
             "pt": m["pt"],
         })

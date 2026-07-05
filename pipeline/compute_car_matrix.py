@@ -18,7 +18,7 @@ BASE = Path(__file__).resolve().parents[1]
 DATA = json.load(open(BASE / "public" / "data.json"))
 MUNIS = DATA["munis"]
 N = len(MUNIS)
-OSRM = "http://127.0.0.1:5000"
+OSRM = "http://127.0.0.1:5001"
 
 coords = ";".join(f"{m['lon']:.5f},{m['lat']:.5f}" for m in MUNIS)
 
