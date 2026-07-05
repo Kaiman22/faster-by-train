@@ -13,6 +13,15 @@ const CAR_COLOR = '#1a6ee0'   // car wins
 const TRAIN_COLOR = '#eb0000' // train wins (SBB red)
 const NEUTRAL_COLOR = '#d8d5d0'
 
+// BFS canton number -> abbreviation
+const CANTONS = {
+  '01': 'ZH', '02': 'BE', '03': 'LU', '04': 'UR', '05': 'SZ', '06': 'OW',
+  '07': 'NW', '08': 'GL', '09': 'ZG', '10': 'FR', '11': 'SO', '12': 'BS',
+  '13': 'BL', '14': 'SH', '15': 'AR', '16': 'AI', '17': 'SG', '18': 'GR',
+  '19': 'AG', '20': 'TG', '21': 'TI', '22': 'VD', '23': 'VS', '24': 'NE',
+  '25': 'GE', '26': 'JU',
+}
+
 function normalize(s) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
@@ -290,7 +299,7 @@ export default function App() {
         <div className="search-results">
           {searchResults.map((m) => (
             <div key={m.id} className="search-result" onClick={() => selectOrigin(m.id)}>
-              {m.n} <span className="kt">{m.kt}</span>
+              {m.n} <span className="kt">{CANTONS[m.kt] || m.kt}</span>
             </div>
           ))}
         </div>
