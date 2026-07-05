@@ -104,6 +104,10 @@ export default function App() {
   const [originId, setOriginId] = useState(null)
   const [query, setQuery] = useState('')
   const [hovered, setHovered] = useState(null)
+  // Exact per-origin matrix (Uint16 minutes; layers: car, pt_weekday[, pt_weekend])
+  const [matrix, setMatrix] = useState(null)
+  const [ptLayer, setPtLayer] = useState('weekday')
+  const matrixCache = useRef(new Map())
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const mapReady = useRef(false)
@@ -137,10 +141,56 @@ export default function App() {
 
   const origin = originId ? muniById[originId] : null
 
+  // Fetch the exact per-origin matrix file (if published); fall back to
+  // client-side estimation when unavailable.
+  useEffect(() => {
+    setMatrix(null)
+    if (!originId || !data?.matrix) return
+    if (matrixCache.current.has(originId)) {
+      setMatrix(matrixCache.current.get(originId))
+      return
+    }
+    let cancelled = false
+    fetch(`./matrix/${originId}.bin`)
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .then((buf) => {
+        if (cancelled || !buf) return
+        const u16 = new Uint16Array(buf)
+        matrixCache.current.set(originId, u16)
+        setMatrix(u16)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [originId, data])
+
+  const hasWeekend = data?.matrix?.layers?.includes('pt_weekend')
+  const exact = matrix != null
+
   // Compute deltas for all municipalities from the selected origin
   const results = useMemo(() => {
-    if (!data || !origin || !carEst) return null
+    if (!data || !origin) return null
     const out = {}
+
+    if (matrix && data.matrix) {
+      const N = data.matrix.n
+      const layers = data.matrix.layers
+      const ptIdx = ptLayer === 'weekend' && layers.includes('pt_weekend')
+        ? layers.indexOf('pt_weekend')
+        : layers.indexOf('pt_weekday')
+      const carIdx = layers.indexOf('car')
+      data.munis.forEach((t, ti) => {
+        if (t.id === origin.id) return
+        const carMin = matrix[carIdx * N + ti]
+        const ptMin = matrix[ptIdx * N + ti]
+        if (carMin === 65535 || ptMin === 65535) return
+        const carSec = carMin * 60
+        const ptSec = ptMin * 60
+        out[t.id] = { carSec, ptSec, delta: carSec - ptSec }
+      })
+      return out
+    }
+
+    if (!carEst) return null
     for (const t of data.munis) {
       if (t.id === origin.id) continue
       const { carSec, ptSec } = estimatePair(origin, t, data.hubs, hubOfMuni, carEst)
@@ -148,7 +198,7 @@ export default function App() {
       out[t.id] = { carSec, ptSec, delta: carSec - ptSec }
     }
     return out
-  }, [data, origin, hubOfMuni, carEst])
+  }, [data, origin, hubOfMuni, carEst, matrix, ptLayer])
 
   // Init map
   useEffect(() => {
@@ -342,6 +392,22 @@ export default function App() {
               <span style={{ color: CAR_COLOR }}>🚗 {stats.car}</span>
             </div>
           )}
+          {hasWeekend && exact && (
+            <div className="day-toggle">
+              <button
+                className={ptLayer === 'weekday' ? 'active' : ''}
+                onClick={() => setPtLayer('weekday')}
+              >
+                Weekday
+              </button>
+              <button
+                className={ptLayer === 'weekend' ? 'active' : ''}
+                onClick={() => setPtLayer('weekend')}
+              >
+                Weekend
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -372,8 +438,10 @@ export default function App() {
       )}
 
       <div className="footer">
-        Estimates from real Swiss routing data (Mon 07:00 commute) · ~90% winner accuracy · not a route planner ·{' '}
-        <a href="https://github.com/Kaiman22/faster-by-train" target="_blank" rel="noreferrer">GitHub</a>
+        {exact
+          ? 'Exact door-to-door times · Swiss GTFS timetable + OSM road routing · not a route planner'
+          : 'Estimates from real Swiss routing data (Mon 07:00 commute) · ~90% winner accuracy · not a route planner'}{' '}
+        · <a href="https://github.com/Kaiman22/faster-by-train" target="_blank" rel="noreferrer">GitHub</a>
       </div>
     </div>
   )

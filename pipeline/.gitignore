@@ -1,0 +1,12 @@
+motis
+motis.tar.bz2
+ui/
+tiles-profiles/
+*.zip
+*.osm.pbf
+switzerland.osrm*
+*.npy
+data/
+config.yml
+car.lua
+lib/
