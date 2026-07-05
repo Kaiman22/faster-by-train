@@ -25,20 +25,24 @@ munis = data["munis"]
 N = len(munis)
 
 layers = []
-for name in ("car_matrix.npy", "pt_weekday.npy", "pt_weekend.npy"):
-    p = PIPE / name
+for name, fname in (("car", "car_matrix_calibrated.npy"),
+                    ("pt_weekday", "pt_weekday.npy"),
+                    ("pt_weekend", "pt_weekend.npy")):
+    p = PIPE / fname
     if p.exists():
         m = np.load(p)
-        assert m.shape == (N, N), f"{name}: shape {m.shape} != ({N},{N})"
+        assert m.shape == (N, N), f"{fname}: shape {m.shape} != ({N},{N})"
         layers.append((name, m))
-        print(f"loaded {name}")
+        print(f"loaded {fname} as layer '{name}'")
 
 assert len(layers) >= 2, "need at least car + weekday PT"
 
 UNREACH = 65535
 stacked = []
 for name, m in layers:
-    minutes = np.where(np.isnan(m), UNREACH, np.round(m / 60.0))
+    # units differ by source: OSRM car matrix is seconds, MOTIS PT is minutes
+    vals = m / 60.0 if name == "car" else m
+    minutes = np.where(np.isnan(vals), UNREACH, np.round(vals))
     minutes = np.clip(minutes, 0, UNREACH).astype(np.uint16)
     stacked.append(minutes)
 
@@ -46,7 +50,7 @@ for i, mu in enumerate(munis):
     buf = b"".join(layer[i, :].tobytes() for layer in stacked)
     (OUTDIR / f"{mu['id']}.bin").write_bytes(buf)
 
-data["matrix"] = {"layers": [n.replace("_matrix", "").replace(".npy", "") for n, _ in layers], "n": N}
+data["matrix"] = {"layers": [n for n, _ in layers], "n": N}
 json.dump(data, open(BASE / "public" / "data.json", "w"), ensure_ascii=False, separators=(",", ":"))
 
 total = sum(f.stat().st_size for f in OUTDIR.glob("*.bin"))

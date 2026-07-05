@@ -35,7 +35,11 @@ NEAR_KM = 1.5
 FAR_KM = 6.0
 WORKERS = 4
 
-DEP_TIME = sys.argv[1] if len(sys.argv) > 1 else "2026-07-06T05:00:00Z"
+# Comma-separated departure times; per pair we take the fastest journey across
+# them. Models a commuter who times their departure to the timetable instead
+# of walking out the door at exactly 07:00 (otherwise up-front wait unfairly
+# penalizes low-frequency lines vs the car).
+DEP_TIMES = (sys.argv[1] if len(sys.argv) > 1 else "2026-07-06T05:00:00Z").split(",")
 OUT = sys.argv[2] if len(sys.argv) > 2 else "pt_weekday.npy"
 
 
@@ -101,8 +105,8 @@ def _do_register(sid, lat, lon):
     return six
 
 
-def one_to_all(lat, lon):
-    params = {"one": f"{lat},{lon}", "time": DEP_TIME, "maxTravelTime": MAX_MIN}
+def one_to_all(lat, lon, dep_time):
+    params = {"one": f"{lat},{lon}", "time": dep_time, "maxTravelTime": MAX_MIN}
     url = f"{MOTIS}/api/v1/one-to-all?{urllib.parse.urlencode(params)}"
     with urllib.request.urlopen(url, timeout=300) as r:
         return json.load(r)
@@ -110,17 +114,18 @@ def one_to_all(lat, lon):
 
 def row_for(oi):
     o = MUNIS[oi]
-    res = one_to_all(o["lat"], o["lon"])
     dur = {}
-    for item in res["all"]:
-        p = item["place"]
-        sid = p.get("stopId")
-        if not sid:
-            continue
-        six = register_stop(sid, p["lat"], p["lon"])
-        d = item["duration"]
-        if six not in dur or d < dur[six]:
-            dur[six] = d
+    for dep in DEP_TIMES:
+        res = one_to_all(o["lat"], o["lon"], dep)
+        for item in res["all"]:
+            p = item["place"]
+            sid = p.get("stopId")
+            if not sid:
+                continue
+            six = register_stop(sid, p["lat"], p["lon"])
+            d = item["duration"]
+            if six not in dur or d < dur[six]:
+                dur[six] = d
 
     row = np.full(N, np.nan, dtype=np.float32)
     for ti in range(N):
