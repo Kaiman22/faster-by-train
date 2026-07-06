@@ -16,30 +16,25 @@ for the entire country at once. Red = train wins, blue = car wins, gray = toss-u
 
 ## Data & method
 
-Built on the [Sleeper Towns](https://github.com/Kaiman22/sleeper-towns) dataset:
-real routing data for 3,966 Swiss settlement points — car times (Google/Geoapify)
-and public-transport times (SBB, Monday 07:00 commute snapshot) to 10 hub cities,
-aggregated to municipality level.
+All 2,069 × 2,069 pairs are **exact**, precomputed offline and served as static
+per-origin binaries (12 KB each). No scraping, no API limits — everything comes
+from open data:
 
-Since an all-pairs matrix (2,069² ≈ 4.3M pairs) can't be scraped, times between
-arbitrary municipalities are estimated client-side:
+- **Anchors**: each municipality is anchored at its **main public-transport stop**
+  (busiest GTFS stop assigned by nearest-municipality rule), so PT is
+  station-to-station and car is center-to-center. No phantom 20-minute walk legs.
+- **Train/PT**: [MOTIS](https://github.com/motis-project/motis) routing on the
+  official Swiss GTFS timetable (opentransportdata.swiss). Best journey across
+  three departures (Mon 07:00/07:20/07:40; Sat 11:00/11:20/11:40 for the weekend
+  layer) — commuters time their departure to the Taktfahrplan.
+- **Car**: OSRM on the Swiss OpenStreetMap network, calibrated to Monday-commute
+  traffic against 20,670 traffic-aware Google drive times (median residual ~5%;
+  raw OSRM is ~34% too optimistic in urban areas).
+- Deltas under 5 minutes are shown as toss-ups. Gray = no reasonable PT
+  connection (over 8 h).
 
-- **Car**: exact where the target is a hub city; otherwise a piecewise speed model
-  fitted on 39,580 real (distance → drive time) pairs. Median error ~11%.
-- **Train/PT**: exact where the target is a hub city; otherwise hub triangulation —
-  `min over hubs [ PT(origin→hub) + transfer + PT(target→hub) ]` with
-  Taktfahrplan transfer times, capped by a car-ratio plausibility bound.
-  Median error ~11%.
-- **Winner-sign accuracy** (the one thing the map shows): **~91%** on held-out
-  ground truth. Deltas under 5 minutes are shown as toss-ups, which absorbs most
-  of the remaining noise.
-
-## Roadmap
-
-- **Weekend mode**: weekday vs. weekend PT comparison (needs a Saturday scrape of
-  the settlement→hub matrix — script ready in the sleeper-towns repo).
-- **Exact car matrix**: local OSRM (Docker) can compute all 2,069² car times
-  exactly in seconds; would replace the distance model.
+The full pipeline (`pipeline/`) reruns in ~30 minutes on a laptop when a new
+timetable year is published.
 
 ## Stack
 

@@ -381,6 +381,11 @@ export default function App() {
           <div className="header-title">🚆 Faster by Train? 🚗</div>
           <div className="header-from">
             from <strong>{origin.n}</strong>
+            {origin.anchor && (
+              <span className="anchor-note" title="Travel times are measured from this stop">
+                {' '}({origin.anchor})
+              </span>
+            )}
             <button className="change-btn" onClick={() => { setOriginId(null); const u = new URL(window.location); u.searchParams.delete('from'); window.history.replaceState(null, '', u) }}>
               change
             </button>
@@ -439,7 +444,7 @@ export default function App() {
 
       <div className="footer">
         {exact
-          ? 'Exact door-to-door times · Swiss GTFS timetable + OSM road routing · not a route planner'
+          ? 'Exact times between main stations/town centers · Swiss GTFS timetable + OSM roads with commute-traffic calibration · not a route planner'
           : 'Estimates from real Swiss routing data (Mon 07:00 commute) · ~90% winner accuracy · not a route planner'}{' '}
         · <a href="https://github.com/Kaiman22/faster-by-train" target="_blank" rel="noreferrer">GitHub</a>
       </div>

@@ -105,11 +105,17 @@ def _do_register(sid, lat, lon):
     return six
 
 
-def one_to_all(lat, lon, dep_time):
+def one_to_all(lat, lon, dep_time, retries=3):
     params = {"one": f"{lat},{lon}", "time": dep_time, "maxTravelTime": MAX_MIN}
     url = f"{MOTIS}/api/v1/one-to-all?{urllib.parse.urlencode(params)}"
-    with urllib.request.urlopen(url, timeout=300) as r:
-        return json.load(r)
+    for attempt in range(retries + 1):
+        try:
+            with urllib.request.urlopen(url, timeout=300) as r:
+                return json.load(r)
+        except Exception:
+            if attempt == retries:
+                raise
+            _time.sleep(2 * (attempt + 1))
 
 
 def row_for(oi):
